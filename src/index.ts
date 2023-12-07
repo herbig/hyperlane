@@ -9,9 +9,16 @@ const signingKey = params[1];
 const infuraSecret = params[2];
 const origin = Number(params[3]);
 
-const mailbox = new Mailbox(signingKey, infuraSecret, chains[origin]);
+if (
+    (params[0] !== 'dispatch' && params[0] !== 'search') || 
+    signingKey === undefined || 
+    infuraSecret === undefined || 
+    isNaN(origin)) {
 
-if (params[0] === 'dispatch') {
+    console.log('Usage: {dispatch|search} {privateKey} {infuraKey} {chainId} {destinationId|searchList} {message|}');
+} else if (params[0] === 'dispatch') {
+
+    const mailbox = new Mailbox(signingKey, infuraSecret, chains[origin]);
     const destination = Number(params[4])
     const message = params[5];
 
@@ -19,14 +26,13 @@ if (params[0] === 'dispatch') {
 
     // dispatch the message and wait for success
     await mailbox.dispatch(destinationChain, destinationChain.testRecipient, message);
-
 } else if (params[0] === 'search') {
-    
+
+    const mailbox = new Mailbox(signingKey, infuraSecret, chains[origin]);
+
     // import matching criteria from json file
     const parsedJson: MatchingListElement[] = JSON.parse(readFileSync(params[4], 'utf-8'));
     
     // match it up
     await mailbox.queryDispatches(parsedJson);
-} else {
-    console.log('Usage: {dispatch|search} {privateKey} {infuraKey} {chainId} {destinationId|searchList} {message|}');
 }

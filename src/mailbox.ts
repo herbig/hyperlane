@@ -1,5 +1,6 @@
 import { AbiCoder, Contract, JsonRpcProvider, Provider, TransactionReceipt, Wallet, ethers } from "ethers";
 import { Chain } from "./chains";
+import * as fs from 'fs/promises';
 
 export class Mailbox {
     
@@ -61,6 +62,7 @@ export class Mailbox {
     async queryDispatches(matchingList: MatchingListElement[]) {
 
         const currentBlock = await this.provider.getBlockNumber();
+        let output = '';
 
         for (const element of matchingList) {
             const eventFilter: Record<string, any> = {};
@@ -81,14 +83,28 @@ export class Mailbox {
                 'latest'
             );
   
-            console.log('----------------------------');
-            console.log('Matching Criteria:', element);
-            console.log('----------------------------');
+            output = output.concat('----------------------------\n')
+                            .concat('Matching Criteria: ' + JSON.stringify(element) + '\n')
+                            .concat('----------------------------\n\n');
+    
             logs.forEach((log: any) => {
                 const parsedLog = this.contract.interface.parseLog(log);
-                console.log('Parsed Log:', parsedLog);
+                const sender = parsedLog.args[0];
+                const destination = parsedLog.args[1];
+                const recipient = parsedLog.args[2];
+                const message = parsedLog.args[3];
+                const details = 'Sender: ' + sender + '\n' +
+                                'Destination: ' + destination + '\n' +
+                                'Recipient: ' + recipient + '\n' +
+                                'Message: ' + message + '\n\n';
+                output = output.concat(details);
             });
+
+            output = output.concat('\n');
         }
+
+        await fs.writeFile('output.txt', output);
+        console.log('Dispatches written to output.txt');
     }
 }
 
